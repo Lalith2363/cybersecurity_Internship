@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Encryption App</title>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+            padding: 40px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Text Encryption Using AES</h2>
+
+    <label>Enter Text:</label><br>
+    <textarea id="inputText"></textarea>
+
+    <label>Secret Key:</label><br>
+    <input type="text" id="secretKey" placeholder="Enter a secret key"><br>
+
+    <button onclick="encryptText()">Encrypt</button>
+    <button onclick="decryptText()">Decrypt</button>
+
+    <h3>Encrypted Text:</h3>
+    <textarea id="encryptedText" readonly></textarea>
+
+    <h3>Decrypted Text:</h3>
+    <textarea id="decryptedText" readonly></textarea>
+
+    <script>
+        function encryptText() {
+            let text = document.getElementById('inputText').value;
+            let key = document.getElementById('secretKey').value;
+
+            if (!text || !key) {
+                alert("Text and key are required!");
+                return;
+            }
+
+            // Generate a random IV
+            const iv = CryptoJS.lib.WordArray.random(16);
+
+            // Encrypt using AES with random IV
+            const encrypted = CryptoJS.AES.encrypt(text, CryptoJS.enc.Utf8.parse(key), {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+
+            // Combine IV + ciphertext (base64)
+            const combined = iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+            document.getElementById('encryptedText').value = combined;
+        }
+
+        function decryptText() {
+    let combinedText = document.getElementById('encryptedText').value;
+    let key = document.getElementById('secretKey').value;
+
+    if (!combinedText || !key) {
+        alert("Encrypted text and key are required!");
+        return;
+    }
+
+    const combinedBytes = CryptoJS.enc.Base64.parse(combinedText);
+
+    // Extract IV (first 16 bytes = 4 words)
+    const ivWords = CryptoJS.lib.WordArray.create(
+        combinedBytes.words.slice(0, 4), 16
+    );
+
+    // Extract ciphertext (remaining bytes)
+    const cipherWords = CryptoJS.lib.WordArray.create(
+        combinedBytes.words.slice(4), combinedBytes.sigBytes - 16
+    );
+
+    const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext: cipherWords },
+        CryptoJS.enc.Utf8.parse(key),
+        {
+            iv: ivWords,
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        }
+    );
+
+    const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+    document.getElementById('decryptedText').value = decryptedText || "Decryption failed. Check key.";
+}
+
+    </script>
+</body>
+</html>
